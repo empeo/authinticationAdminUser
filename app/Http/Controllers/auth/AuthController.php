@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -17,14 +20,10 @@ class AuthController extends Controller
     {
         return view('auth.login');
     }
-    public function ensurelogin(Request $request)
+    public function ensurelogin(LoginRequest $request)
     {
         $user = User::where('email', $request->email)->first();
-        $request->validate([
-            "email" => ["required", "email"],
-            "password" => ["required"]
-        ]);
-        if (!$user) {
+        if (!$user){
             return redirect()->back()->with("error", "Invalid User")->withInput($request->only("email"));
         }
         $credentials = $request->only("email", "password");
@@ -45,18 +44,9 @@ class AuthController extends Controller
     {
         return view('auth.signup');
     }
-    public function ensureregister(Request $request)
+    public function ensureregister(RegisterRequest $request)
     {
-        $request->validate([
-            "name" => ["required"],
-            "email" => ["required", "email", "unique:users,email"],
-            "password" => ["required", "regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>])[A-Za-z\d!@#$%^&*()\-_=+{};:,<.>]{5,}$/"],
-            "conipassword" => ["required", "same:password"],
-            "phone" => ["required", "regex:/^[0-9]{11}$/"],
-            "gender" => ["required", "in:male,female"],
-            "image" => ["required", "mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['name', 'email', 'password', 'phone', 'gender', 'image']);
+        $requestDB = $request->validated();
         $requestDB["password"] = Hash::make($request->password);
         $image = $request->file("image");
         $imageName = time() . "." . $image->getClientOriginalExtension();
@@ -64,7 +54,8 @@ class AuthController extends Controller
         $requestDB["image"] = $imageName;
         $user = User::create($requestDB);
         if ($user) {
-            return redirect()->route("login")->with("success", "User Created Successfully");
+            Auth::loginUsingId($user->id);
+            return redirect()->intended(RouteServiceProvider::HOMEClient)->with('success', 'User created and logged in successfully');
         }
         return redirect()->back()->with("error", "User Not Created")->withInput($requestDB);
     }

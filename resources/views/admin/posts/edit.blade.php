@@ -29,8 +29,8 @@
                                 <div class="form-outline mb-4">
                                     <div class="form-floating">
                                         <textarea class="form-control" placeholder="Description Here"
-                                            value="{{ old('description') ? old('description') : $post->title }}" id="floatingTextarea2" style="height: 100px"
-                                            name="description"></textarea>
+                                            id="floatingTextarea2" style="height: 100px"
+                                            name="description">{{ old('description') ? old('description') : $post->description}}</textarea>
                                         <label for="floatingTextarea2">Description</label>
                                     </div>
                                     @error('description')

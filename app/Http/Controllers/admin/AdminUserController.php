@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Post;
+use App\Http\Requests\User\UserStoreRequest;
+use App\Http\Requests\User\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,9 +13,8 @@ use Illuminate\Support\Facades\Hash;
 class AdminUserController extends Controller
 {
     public function home(){
-        $users = User::all();
-        $posts = Post::paginate(4);
-        return view("home", ["users" => $users, "posts" => $posts]);
+        $users = User::with("posts")->paginate(4);
+        return view("home", ["users" => $users]);
     }
     public function index(){
         $users = User::where("role","user")->paginate(10);
@@ -23,17 +23,8 @@ class AdminUserController extends Controller
     public function create(){
         return view('admin.users.create');
     }
-    public function store(Request $request){
-        $request->validate([
-            "name" => ["required"],
-            "email" => ["required", "email", "unique:users,email"],
-            "password" => ["required", "regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>])[A-Za-z\d!@#$%^&*()\-_=+{};:,<.>]{5,}$/"],
-            "conipassword" => ["required", "same:password"],
-            "phone" => ["required", "regex:/^[0-9]{11}$/"],
-            "gender" => ["required", "in:male,female"],
-            "image" => ["required", "mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['name', 'email', 'password', 'phone', 'gender', 'image']);
+    public function store(UserStoreRequest $request){
+        $requestDB = $request->validated();
         $requestDB["password"] = Hash::make($request->password);
         $image = $request->file("image");
         $imageName = time() . "." . $image->getClientOriginalExtension();
@@ -44,7 +35,6 @@ class AdminUserController extends Controller
             return redirect()->route("users.index")->with("success", "User Created Successfully");
         }
         return redirect()->back()->with("error", "User Not Created")->withInput($requestDB);
-
     }
     public function show(string $id){
         $user = User::find($id);
@@ -60,20 +50,13 @@ class AdminUserController extends Controller
         }
         return view("admin.users.edit",["user"=>$user]);
     }
-    public function update(Request $request , string $id){
+    public function update(UserUpdateRequest $request , string $id){
         $user = User::find($id);
-        $request->validate([
-            "name" => ["required"],
-            "email" => ["required", "email", "unique:users,email," . $user->id, "regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/"],
-            "password" => ["nullable", "regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>])[A-Za-z\d!@#$%^&*()\-_=+{};:,<.>]{5,}$/"],
-            "conipassword" => ["nullable", "same:password"],
-            "phone" => ["required", "regex:/^[0-9]{11}$/"],
-            "gender" => ["required", "in:male,female"],
-            "image" => ["mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['name', 'email', 'phone', 'gender']);
-        if ($request->filled('password')) {
+        $requestDB = $request->validated();
+        if ($request->filled('password')){
             $requestDB["password"] = Hash::make($request->password);
+        }else{
+            unset($requestDB["password"]);
         }
         if ($request->hasFile("image")) {
             if($user->role == "admin"){

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\users;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\UserUpdateRequest;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,9 +14,8 @@ class UserController extends Controller
 {
     public function home()
     {
-        $users = User::all();
-        $posts = Post::paginate(4);
-        return view("home", ["users" => $users, "posts" => $posts]);
+        $users = User::with("posts")->paginate(4);
+        return view("home", ["users" => $users]);
     }
     public function profile()
     {
@@ -30,21 +30,14 @@ class UserController extends Controller
         }
         return view("user.users.edit", ["user" => $user]);
     }
-    public function update(Request $request, string $id)
+    public function update(UserUpdateRequest $request, string $id)
     {
         $user = User::find($id);
-        $request->validate([
-            "name" => ["required"],
-            "email" => ["required", "email", "unique:users,email," . $id],
-            "password" => ["nullable", "regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>])[A-Za-z\d!@#$%^&*()\-_=+{};:,<.>]{5,}$/"],
-            "conipassword" => ["nullable", "same:password"],
-            "phone" => ["required", "regex:/^[0-9]{11}$/"],
-            "gender" => ["required", "in:male,female"],
-            "image" => ["mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['name', 'email', 'phone', 'gender', 'image']);
+        $requestDB = $request->validated();
         if ($request->filled('password')) {
             $requestDB["password"] = Hash::make($request->password);
+        }else{
+            unset($requestDB["password"]);
         }
         if ($request->hasFile("image")) {
             if ($user->image) {

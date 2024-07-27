@@ -27,7 +27,9 @@
                                 </div>
                                 <div class="form-outline mb-4">
                                     <div class="form-floating">
-                                        <textarea class="form-control" placeholder="Description Here" id="floatingTextarea2" style="height: 100px" name="description"></textarea>
+                                        <textarea class="form-control" placeholder="Description Here" id="floatingTextarea2" style="height: 100px" name="description">
+                                            {{ old('description')}}
+                                        </textarea>
                                         <label for="floatingTextarea2">Description</label>
                                     </div>
                                     @error('description')

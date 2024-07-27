@@ -3,29 +3,23 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Post\PostStoreRequest;
+use App\Http\Requests\Post\PostUpdateRequest;
 use App\Models\Post;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class AdminPostController extends Controller
 {
     public function index()
     {
-        $adminIds = User::where("role","admin")->pluck("id");
-        $posts = Post::whereNotIn("user_id",$adminIds)->paginate(4);
-        // $posts = Post::paginate(4);
-        return view('admin.posts.index',["posts"=>$posts]);
+        $users = User::where("role","user")->with("posts")->paginate(4);
+        return view('admin.posts.index',["users"=>$users]);
     }
     public function create(){
         return view("admin.posts.create");
     }
-    public function store(Request $request){
-        $request->validate([
-            "title" => ["required", "min:3", "max:20"],
-            "description" => ["required", "min:20"],
-            "image" => ["required", "mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['title', 'description', 'image']);
+    public function store(PostStoreRequest $request){
+        $requestDB = $request->validated();
         $image = $request->file("image");
         $imageName = time() . "." . $image->getClientOriginalExtension();
         $requestDB["image"] = $imageName;
@@ -51,19 +45,16 @@ class AdminPostController extends Controller
         }
         return view("admin.posts.edit", ["post" => $post]);
     }
-    public function update(Request $request, string $id){
+    public function update(PostUpdateRequest $request, string $id){
         $post = Post::find($id);
         if (!$post) {
             return redirect()->route("posts.index");
         }
-        $request->validate([
-            "title" => ["required", "min:3", "max:20"],
-            "description" => ["nullable", "min:20"],
-            "image" => ["mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['title']);
+        $requestDB = $request->validated();
         if ($request->filled("description")) {
             $requestDB["description"] = $request->description;
+        }else{
+            unset($requestDB['description']);
         }
         if ($request->hasFile("image")) {
             if ($post->image) {

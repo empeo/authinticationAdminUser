@@ -30,9 +30,9 @@ Route::middleware("guest")->group(function(){
 
 Route::get('/client/home',[UserController::class,"home"])->name("user.home")->middleware("UserAuth");
 Route::prefix("/client")->middleware("UserAuth")->group(function(){
-    Route::get('/user/{userid}/edit',[UserController::class,"edit"])->name("user.edit");
-    Route::put('/user/{userid}',[UserController::class,"update"])->name("user.update");
-    Route::delete('/user/{userid}',[UserController::class,"destroy"])->name("user.destroy");
+    Route::get('/user/{user}/edit',[UserController::class,"edit"])->name("user.edit");
+    Route::put('/user/{user}',[UserController::class,"update"])->name("user.update");
+    Route::delete('/user/{user}',[UserController::class,"destroy"])->name("user.destroy");
     Route::get("/profile",[UserController::class,"profile"])->name("user.profile");
     Route::resource("post",PostController::class);
 });

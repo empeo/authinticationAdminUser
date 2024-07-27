@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\users;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Post\PostStoreRequest;
+use App\Http\Requests\Post\PostUpdateRequest;
 use App\Models\Post;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class PostController extends Controller
 {
@@ -19,14 +18,9 @@ class PostController extends Controller
     {
         return view('user.posts.create');
     }
-    public function store(Request $request)
+    public function store(PostStoreRequest $request)
     {
-        $request->validate([
-            "title" => ["required", "min:3", "max:20"],
-            "description" => ["required", "min:20"],
-            "image" => ["required", "mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['title', 'description', 'image']);
+        $requestDB = $request->validated();
         $image = $request->file("image");
         $imageName = time() . "." . $image->getClientOriginalExtension();
         $requestDB["image"] = $imageName;
@@ -54,20 +48,17 @@ class PostController extends Controller
         }
         return view("user.posts.show", ["post" => $post]);
     }
-    public function update(Request $request, string $id)
+    public function update(PostUpdateRequest $request, string $id)
     {
         $post = Post::find($id);
         if (!$post) {
             return redirect()->route("post.index");
         }
-        $request->validate([
-            "title" => ["required", "min:3", "max:20"],
-            "description" => ["nullable", "min:20"],
-            "image" => ["mimes:jpg,png,jpeg", "max:1024"],
-        ]);
-        $requestDB = $request->only(['title']);
+        $requestDB = $request->validated();
         if ($request->filled("description")) {
             $requestDB["description"] = $request->description;
+        }else{
+            unset($requestDB['description']);
         }
         if ($request->hasFile("image")) {
             if ($post->image) {
