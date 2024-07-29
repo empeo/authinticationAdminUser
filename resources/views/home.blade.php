@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Home User Page')
 @section('content')
-    @if ($users->isNotEmpty())
+    @if ($users->isNotEmpty() and $users->pluck('posts')->flatten()->isNotEmpty())
         <div class="row row-cols-1 row-cols-md-2 g-4">
             @foreach ($users as $user)
                 @foreach ($user->posts as $post)
